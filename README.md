@@ -1,4 +1,4 @@
-# This is clone from SEAL for personal use
+# This is clone from SEAL for personal modification
 # SEAL: <u>S</u>earch <u>E</u>ngines with <u>A</u>utoregressive <u>L</u>Ms
 This repo hosts the code for our paper, SEAL.
  
