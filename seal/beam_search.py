@@ -14,8 +14,13 @@ from torch import nn
 import torch.distributed as dist
 
 from transformers import LogitsProcessor, BeamScorer, BeamSearchScorer, LogitsProcessorList, StoppingCriteriaList, HammingDiversityLogitsProcessor
-from transformers.generation_utils import BeamSearchOutput, validate_stopping_criteria, BeamSearchEncoderDecoderOutput, BeamSearchDecoderOnlyOutput
-from transformers.generation_logits_process import TopKLogitsWarper
+from transformers.generation.utils import BeamSearchOutput, validate_stopping_criteria, BeamSearchEncoderDecoderOutput, BeamSearchDecoderOnlyOutput
+from transformers.generation.logits_process import TopKLogitsWarper
+
+# from transformers import LogitsProcessor, BeamScorer, BeamSearchScorer, LogitsProcessorList, StoppingCriteriaList, HammingDiversityLogitsProcessor
+# from transformers.generation_utils import BeamSearchOutput, validate_stopping_criteria, BeamSearchEncoderDecoderOutput, BeamSearchDecoderOnlyOutput
+# from transformers.generation_logits_process import TopKLogitsWarper
+
 
 from seal.index import FMIndex
 
@@ -430,19 +435,25 @@ def fm_index_generate(
     logits_processor = model._get_logits_processor(
         encoder_input_ids=input_ids,
         repetition_penalty=None,
-        no_repeat_ngram_size=0,
-        encoder_no_repeat_ngram_size=0,
+        no_repeat_ngram_size=None,
+        encoder_no_repeat_ngram_size=None,
         bad_words_ids=None,
         min_length=min_length,
         max_length=max_length,
-        eos_token_id=None,
+        eos_token_id=eos_token_id,
         prefix_allowed_tokens_fn=None,
         forced_bos_token_id=forced_bos_token_id,
         forced_eos_token_id=None,
         num_beams=num_beams,
         num_beam_groups=1,
-        diversity_penalty=0.0,
-        remove_invalid_values=True)
+        diversity_penalty=None,
+        remove_invalid_values=True,
+
+        exponential_decay_length_penalty=None,
+        input_ids_seq_length=None,
+        logits_processor=[],
+        renormalize_logits=None
+        )
 
     if diverse_bs_groups > 1 and diverse_bs_penalty > 0.0:
         logits_processor.append(
@@ -473,6 +484,7 @@ def fm_index_generate(
     stopping_criteria = model._get_stopping_criteria(
         max_length=max_length,
         max_time=None,
+        stopping_criteria=[]
         #max_new_tokens=None,
         #start_length=None
         )
@@ -515,7 +527,7 @@ def fm_index_generate(
         )
 
     decoder_input_ids, model_kwargs = model._expand_inputs_for_generation(
-        decoder_input_ids, 
+        input_ids=decoder_input_ids, 
         expand_size=num_beams, 
         is_encoder_decoder=True, 
         **model_kwargs)
